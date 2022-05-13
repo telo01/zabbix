@@ -1,6 +1,6 @@
 zabbix_export:
   version: '6.0'
-  date: '2022-05-13T21:01:38Z'
+  date: '2022-05-13T22:19:08Z'
   groups:
     -
       uuid: 94bf53c5699049ef99cd5c64d493ad39
@@ -108,9 +108,16 @@ zabbix_export:
           triggers:
             -
               uuid: db8c0ee9d85a41d0aa582ae3bfdeee10
-              expression: 'avg(/Trassir-server/trassircpuload,#5)>85'
-              name: 'Trassir server cpu load too high'
-              priority: HIGH
+              expression: 'min(/Trassir-server/trassircpuload,5m)>{$TRASSIR_CPU_WARNING}'
+              name: 'High CPU utilization (over {$TRASSIR_CPU_WARNING} for 5 minutes)'
+              opdata: 'Current utilization: {ITEM.LASTVALUE1}'
+              priority: WARNING
+            -
+              uuid: ff21e649f8f7490e832aeda98ab96e9e
+              expression: 'min(/Trassir-server/trassircpuload,5m)>{$TRASSIR_CPU_CRITICAL}'
+              name: 'Very high CPU utilization (over {$TRASSIR_CPU_CRITICAL} for 5 minutes)'
+              opdata: 'Current utilization: {ITEM.LASTVALUE1}'
+              priority: AVERAGE
         -
           uuid: ea42107e33614ad5b11f951b5d4b2ea4
           name: 'Trassir database status'
@@ -193,9 +200,9 @@ zabbix_export:
           triggers:
             -
               uuid: 1a5e907d7f89400b86bce9be439d90e8
-              expression: 'max(/Trassir-server/trassirdisksstatmaindays,#5)<{$TRASSIR_ARCHIVE_DEPTH}'
+              expression: 'last(/Trassir-server/trassirdisksstatmaindays) > 0 and max(/Trassir-server/trassirdisksstatmaindays,#5)<{$TRASSIR_ARCHIVE_DEPTH}'
               name: 'Archive depth on main channels is too low'
-              priority: AVERAGE
+              priority: WARNING
               description: 'Глубина архива по основным каналом меньше заданного лимита.'
         -
           uuid: 8874b34efd4e483784793e5be4c1166f
@@ -218,6 +225,12 @@ zabbix_export:
             -
               tag: Application
               value: 'trassir server'
+          triggers:
+            -
+              uuid: 214461d0db074be9a5580ed8031a4345
+              expression: 'last(/Trassir-server/trassirdisksstatprivdays) > 0 and max(/Trassir-server/trassirdisksstatprivdays,#5)<{$TRASSIR_ARCHIVE_PRIV_DEPTH}'
+              name: 'Archive of priveleged channels'' current depth is too low'
+              priority: WARNING
         -
           uuid: 4842ec56043b4acc9929a2c4a62e4c11
           name: 'Trassir archive sub days depth'
@@ -327,16 +340,29 @@ zabbix_export:
               uuid: 6e046ecf56b540f09b18890fd43da52d
               expression: last(/Trassir-server/trassiruptime)<300
               name: 'Trassir server was restarted'
-              priority: WARNING
+              priority: INFO
               manual_close: 'YES'
       macros:
         -
           macro: '{$TRASSIR_ARCHIVE_DEPTH}'
           value: '7'
-          description: 'Minimum archive depth'
+          description: 'Minimum main archive depth'
+        -
+          macro: '{$TRASSIR_ARCHIVE_PRIV_DEPTH}'
+          value: '7'
+          description: 'Minimum priveleged archive depth'
+        -
+          macro: '{$TRASSIR_CPU_CRITICAL}'
+          value: '90'
+          description: 'Trassir CPU critical'
+        -
+          macro: '{$TRASSIR_CPU_WARNING}'
+          value: '75'
+          description: 'Trassir CPU warning'
         -
           macro: '{$TRASSIR_SDK_PASS}'
           value: '12345'
+          description: 'Your SDK Trassir password'
         -
           macro: '{$TRASSIR_SDK_PORT}'
           value: '8080'
@@ -359,6 +385,29 @@ zabbix_export:
       name: 'Not all cams online on trassir server'
       priority: AVERAGE
   graphs:
+    -
+      uuid: 5eee427005084da5933b0a79f3e96012
+      name: 'Archive store depth in days'
+      show_work_period: 'NO'
+      ymin_type_1: FIXED
+      graph_items:
+        -
+          color: 1A7C11
+          item:
+            host: Trassir-server
+            key: trassirdisksstatmaindays
+        -
+          sortorder: '1'
+          color: F63100
+          item:
+            host: Trassir-server
+            key: trassirdisksstatprivdays
+        -
+          sortorder: '2'
+          color: 2774A4
+          item:
+            host: Trassir-server
+            key: trassirdisksstatsubsdays
     -
       uuid: 3b29c57326dd45f599e0ddf8266091e4
       name: 'Trassir server cpu load'
