@@ -1,6 +1,6 @@
 zabbix_export:
   version: '6.0'
-  date: '2022-05-13T22:19:08Z'
+  date: '2022-05-13T22:30:37Z'
   groups:
     -
       uuid: 94bf53c5699049ef99cd5c64d493ad39
@@ -112,6 +112,10 @@ zabbix_export:
               name: 'High CPU utilization (over {$TRASSIR_CPU_WARNING} for 5 minutes)'
               opdata: 'Current utilization: {ITEM.LASTVALUE1}'
               priority: WARNING
+              dependencies:
+                -
+                  name: 'Very high CPU utilization (over {$TRASSIR_CPU_CRITICAL} for 5 minutes)'
+                  expression: 'min(/Trassir-server/trassircpuload,5m)>{$TRASSIR_CPU_CRITICAL}'
             -
               uuid: ff21e649f8f7490e832aeda98ab96e9e
               expression: 'min(/Trassir-server/trassircpuload,5m)>{$TRASSIR_CPU_CRITICAL}'
